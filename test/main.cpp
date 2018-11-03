@@ -56,6 +56,12 @@ int main(int argc, char *argv[]) {
     u1.test[1].push_back(50);
     col.Upsert(u1.uid, u1);   
 
+    u1.uid = 789;
+    u1.name = "insert";
+    col.Insert(u1);
+
+    col.Insert(bb::vp{{"_id",1111}, {"name", "insert_bb"}});
+
     cout<<"======count=="<<endl;
     cout<<col.Count()<<endl;
     cout<<col.Find({{"_id",123}}).Count()<<endl;

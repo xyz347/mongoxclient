@@ -14,6 +14,7 @@ class Collection {
 public:
     typedef mongocxx::stdx::optional<mongocxx::result::update> update_result;
     typedef mongocxx::stdx::optional<mongocxx::result::delete_result> delete_result;
+    typedef mongocxx::stdx::optional<mongocxx::result::insert_result> insert_result;
 
     Collection(mongocxx::collection &col):col_(col) {
     }
@@ -87,6 +88,21 @@ public:
 
         return col_.update_many(vs, vu);
 	}
+
+    // insert
+    insert_result Insert(const bb::vp &data) {
+        std::string s;
+        auto vs = Util::VpToView(data, s);
+
+        return col_.insert_one(vs);
+    }
+    template <typename DATA>
+    insert_result Insert(const DATA &data) {
+        std::string s = x2struct::X::tobson(data);
+        auto vs = bsoncxx::document::view((const uint8_t*)s.data(), s.length());
+
+        return col_.insert_one(vs);
+    }
 
     // delete one
     delete_result Remove(const bb::vp&selector) {
