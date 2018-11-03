@@ -14,7 +14,7 @@ class Collection {
 public:
     typedef mongocxx::stdx::optional<mongocxx::result::update> update_result;
     typedef mongocxx::stdx::optional<mongocxx::result::delete_result> delete_result;
-    typedef mongocxx::stdx::optional<mongocxx::result::insert_result> insert_result;
+    typedef mongocxx::stdx::optional<mongocxx::result::insert_one> insert_result;
 
     Collection(mongocxx::collection &col):col_(col) {
     }

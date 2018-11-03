@@ -1,0 +1,3 @@
+[submodule "thirdparty/x2struct"]
+	path = thirdparty/x2struct
+	url = git@github.com:xyz347/x2struct.git
