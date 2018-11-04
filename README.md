@@ -108,7 +108,8 @@ int main(int argc, char *argv[]) {
 
 ## bb::vp
 - bb是namespace，bson builder的意思，起一个短名方便使用
-- vp是vector paire的意思，本质是std::vector<std::pair>，pair是<std::string, bb::intf>
+- vp是vector pair的意思，本质是std::vector<std::pair>，pair是<std::string, bb::intf>，intf是interfere的意思，具体支持的类型可以看[bson_builder.h](https://github.com/xyz347/x2struct/blob/master/bson_builder.h)
 - vp对应的是mgo/bson的M，由于C++不支持A:B这种初始化map的语法，所以用pair来表征一个key value对，然后多个kv对需要用一个vector存储。构造起来比Golang的bson.M麻烦（只要是两层大括号），但是比bsoncxx简单不少。
 - 比如构造一个bson.M{"_id":10} 这种数据只需要写{{"_id",10}}即可
 - 构造bson.M{"_id":bson.M{"$lt":10}}则是 {{"_id",bb::vp{{"$lt",10}}}} 最别扭的就是多了一倍的括号
+- 用pair可以省一层括号，但是表述能力很受限，为了统一，还是全部用vector pair
