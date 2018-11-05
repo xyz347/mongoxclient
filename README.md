@@ -113,3 +113,6 @@ int main(int argc, char *argv[]) {
 - 比如构造一个bson.M{"_id":10} 这种数据只需要写{{"_id",10}}即可
 - 构造bson.M{"_id":bson.M{"$lt":10}}则是 {{"_id",bb::vp{{"$lt",10}}}} 最别扭的就是多了一倍的括号
 - 用pair可以省一层括号，但是表述能力很受限，为了统一，还是全部用vector pair
+
+## 重要说明
+- thirdparty里面的mongocxx的lib是基于**g++ (Ubuntu 4.9.4-2ubuntu1~12.04) 4.9.4**编译的，非这个环境需要自行下载代码编译
