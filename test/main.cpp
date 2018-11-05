@@ -1,5 +1,9 @@
 #include <iostream>
 
+#ifdef BLADE_TEST
+#include <gtest/gtest.h>
+#endif
+
 #include <mongocxx/client.hpp>
 #include <mongocxx/uri.hpp>
 #include <mongocxx/instance.hpp>
@@ -19,7 +23,13 @@ struct User {
     XTOSTRUCT(A(uid, "bson:_id"), O(name, age, tags, test));
 };
 
-int main(int argc, char *argv[]) {
+
+#ifndef BLADE_TEST
+int main(int argc, char *argv[])
+#else
+TEST(mongoxclient, test)
+#endif
+{
     mongocxx::uri uri("mongodb://test:test@127.0.0.1:27018/test");
     mongocxx::client client(uri);
     mongocxx::collection collect = client["test"]["test"];
