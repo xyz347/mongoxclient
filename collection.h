@@ -3,10 +3,13 @@
 
 #include <memory>
 #include <mongocxx/collection.hpp>
-#include <x2struct/bson_builder.h>
+#include <xbson/bson.h>
 
 #include "query.h"
 #include "util.h"
+
+
+#define MONGXC_STRING_TO_VIEW(s)  bsoncxx::document::view((const uint8_t*)s.data(), s.length())
 
 namespace mongoxc {
 
@@ -20,105 +23,89 @@ public:
     }
 public:
     // query
-    Query& Find(const bb::vp&query) {
+    Query& Find(const std::string&query) {
         query_.reset(new Query(col_, query));
         return *query_;
     }
-    Query& FindId(const std::string& id) {
-        return Find({{"_id",id}});
-    }
-    Query& FindId(int64_t id) {
-        return Find({{"_id",id}});
+    
+    template<typename T>
+    Query& FindId(const T& id) {
+        return Find(Util::kv("_id", id));
     }
 
     // update one
-    update_result Update(const bb::vp&selector, const bb::vp&update) {
+    update_result Update(const std::string& selector, const std::string& update) {
         return Update(selector, update, false);
     }
-    template <typename IDTYPE>
-    update_result Update(const IDTYPE& id, const bb::vp&update) {
-        return Update(id, update, false);
-    }
-    template <typename DATA>
-    update_result Update(const bb::vp&selector, const DATA&update) {
-        std::string s;
-        std::string u = x2struct::BsonWriter().convert("$set", update).toStr();
 
-        auto vs = Util::VpToView(selector, s);
-        auto vu = bsoncxx::document::view((const uint8_t*)u.data(), u.length());
-        return col_.update_one(vs, vu);
+    template <typename T>
+    update_result Update(const std::string& selector, const T& data) {
+        return Update(selector, Util::kv("$set", data), false);
     }
-    template <typename IDTYPE, typename DATA>
-    update_result Update(const IDTYPE& id, const DATA&update) {
-        return Update({{"_id",id}}, update);
+
+    template <typename T>
+    update_result UpdateId(const T& id, const std::string& data) {
+        return Update(Util::kv("_id", id), data, false);
     }
-    
+
+    template <typename ID, typename DATA>
+    update_result UpdateId(const ID& id, const DATA& data) {
+        return Update(Util::kv("_id", id), Util::kv("$set", data), false);
+    }
+
     // upsert
-    update_result Upsert(const bb::vp&selector, const bb::vp&update) {
-        return Update(selector, update, true);
+    update_result Upsert(const std::string& selector, const std::string& data) {
+        return Update(selector, data, true);
     }
-    template <typename IDTYPE>
-    update_result Upsert(const IDTYPE& id, const bb::vp&update) {
-        return Update(id, update, true);
+    template <typename T>
+    update_result Upsert(const std::string& selector, const T& data) {
+        return Update(selector, Util::kv("$set", data), true);
     }
-    template <typename DATA>
-    update_result Upsert(const bb::vp&selector, const DATA&update) {
-        mongocxx::options::update options;
-        options.upsert(true);
 
-        std::string s;
-        std::string u = x2struct::BsonWriter().convert("$set", update).toStr();
-
-        auto vs = Util::VpToView(selector, s);
-        auto vu = bsoncxx::document::view((const uint8_t*)u.data(), u.length());
-        return col_.update_one(vs, vu, options);
+    template <typename T>
+    update_result UpsertId(const T& id, const std::string& data) {
+        return Update(Util::kv("_id",id), data, true);
     }
-    template <typename IDTYPE, typename DATA>
-    update_result Upsert(const IDTYPE& id, const DATA&update) {
-        return Upsert({{"_id",id}}, update);
+    template <typename ID, typename DATA>
+    update_result UpsertId(const ID& id, const DATA& data) {
+        return Update(Util::kv("_id", id), Util::kv("$set", data), true);
     }
 
     // update all hit
-    update_result UpdateAll(const bb::vp&selector, const bb::vp&update) {
-        std::string s;
-        std::string u;
-
-        auto vs = Util::VpToView(selector, s);
-        auto vu = Util::VpToView(update, u);
+    update_result UpdateAll(const std::string& selector, const std::string& data) {
+        auto vs = MONGXC_STRING_TO_VIEW(selector);
+        auto vu = MONGXC_STRING_TO_VIEW(data);
 
         return col_.update_many(vs, vu);
 	}
 
     // insert
-    insert_result Insert(const bb::vp &data) {
-        std::string s;
-        auto vs = Util::VpToView(data, s);
+    insert_result Insert(const std::string &data) {
+        auto vs = MONGXC_STRING_TO_VIEW(data);
 
         return col_.insert_one(vs);
     }
     template <typename DATA>
     insert_result Insert(const DATA &data) {
-        std::string s = x2struct::X::tobson(data);
-        auto vs = bsoncxx::document::view((const uint8_t*)s.data(), s.length());
+        std::string s = xpack::bson::encode(data);
+        auto vs = MONGXC_STRING_TO_VIEW(s);
 
         return col_.insert_one(vs);
     }
 
     // delete one
-    delete_result Remove(const bb::vp&selector) {
-        std::string s;
-        auto vs = Util::VpToView(selector, s);
+    delete_result Remove(const std::string& selector) {
+        auto vs = MONGXC_STRING_TO_VIEW(selector);
         return col_.delete_one(vs);
     }
-    template <typename IDTYPE>
-    delete_result Remove(const IDTYPE& id) {
-        return Remove({{"_id", id}});
+    template <typename T>
+    delete_result RemoveId(const T& id) {
+        return Remove(Util::kv("_id", id));
     }
 
     // delete many
-    delete_result RemoveAll(const bb::vp&selector) {
-        std::string s;
-        return col_.delete_many(Util::VpToView(selector, s));
+    delete_result RemoveAll(const std::string& selector) {
+        return col_.delete_many(MONGXC_STRING_TO_VIEW(selector));
     }
 
     // count
@@ -127,21 +114,14 @@ public:
     }
 private:
     // update one
-    update_result Update(const bb::vp&selector, const bb::vp&update, bool upsert) {
+    update_result Update(const std::string& selector, const std::string& data, bool upsert) {
         mongocxx::options::update options;
         options.upsert(upsert);
 
-        std::string s;
-        std::string u;
-
-        auto vs = Util::VpToView(selector, s);
-        auto vu = Util::VpToView(update, u);
+        auto vs = MONGXC_STRING_TO_VIEW(selector);
+        auto vu = MONGXC_STRING_TO_VIEW(data);
 
         return col_.update_one(vs, vu, options);
-    }
-    template <typename IDTYPE>
-    update_result Update(const IDTYPE& id, const bb::vp&update, bool upsert) {
-        return Update({{"_id",id}}, update, upsert);
     }
 private:
     mongocxx::collection &col_;

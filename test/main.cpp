@@ -9,10 +9,12 @@
 #include <mongocxx/instance.hpp>
 
 #include "mongoxclient.hpp"
+#include "xpack/json.h"
 
 mongocxx::instance instance{};
 
 using namespace std;
+using bb = xpack::BsonBuilder;
 
 struct User {
     int uid;
@@ -20,7 +22,7 @@ struct User {
     int age;
     vector<string> tags;
     vector<vector<int>> test;
-    XTOSTRUCT(A(uid, "bson:_id"), O(name, age, tags, test));
+    XPACK(A(uid, "bson:_id"), O(name, age, tags, test));
 };
 
 
@@ -35,8 +37,10 @@ TEST(mongoxclient, test)
     mongocxx::collection collect = client["test"]["test"];
 
     mongoxc::Collection col(collect);
+
+    std::string empty = bb::En("{}");
    
-    col.RemoveAll({});
+    col.RemoveAll(empty);
 
     User u1;
     u1.uid = 123;
@@ -50,7 +54,7 @@ TEST(mongoxclient, test)
     u1.test[0].push_back(3);
     u1.test[1].push_back(4);
     u1.test[1].push_back(5);
-    col.Upsert(u1.uid, u1);   
+    col.UpsertId(u1.uid, u1);   
     
     u1.uid = 456;
     u1.name = "Good";
@@ -64,62 +68,62 @@ TEST(mongoxclient, test)
     u1.test[0].push_back(30);
     u1.test[1].push_back(40);
     u1.test[1].push_back(50);
-    col.Upsert(u1.uid, u1);   
+    col.UpsertId(u1.uid, u1);   
 
     u1.uid = 789;
     u1.name = "insert";
     col.Insert(u1);
 
-    col.Insert(bb::vp{{"_id",1111}, {"name", "insert_bb"}});
+    col.Insert(bb::En("{'_id':1111, 'name':'insert_bb'}"));
 
     cout<<"======count=="<<endl;
     cout<<col.Count()<<endl;
-    cout<<col.Find({{"_id",123}}).Count()<<endl;
+    cout<<col.FindId(123).Count()<<endl;
     
     cout<<"======get====="<<endl;
     User get;
     User getid;
     vector<User> all;
-    col.Find({{"_id",123}}).One(get);
-    cout<<x2struct::X::tojson(get)<<endl;
+    col.FindId(123).One(get);
+    cout<<xpack::json::encode(get)<<endl;
     col.FindId(456).One(getid);
-    cout<<x2struct::X::tojson(getid)<<endl;
-    col.Find({}).All(all);
+    cout<<xpack::json::encode(getid)<<endl;
+    col.Find(empty).All(all);
     for (size_t i=0; i<all.size(); i++) {
-        cout<<x2struct::X::tojson(all[i])<<endl;
+        cout<<xpack::json::encode(all[i])<<endl;
     }
 
     cout<<"===skip==="<<endl;
     all.clear();
-    col.Find({}).Skip(1).All(all);
+    col.Find(empty).Skip(1).All(all);
     for (size_t i=0; i<all.size(); i++) {
-        cout<<x2struct::X::tojson(all[i])<<endl;
+        cout<<xpack::json::encode(all[i])<<endl;
     }
 
     cout<<"===sort==="<<endl;
     all.clear();
-    col.Find({}).Sort({{"_id",-1}}).All(all);
+    col.Find(empty).Sort(bb::En("{'_id':-1}")).All(all);
     for (size_t i=0; i<all.size(); i++) {
-        cout<<x2struct::X::tojson(all[i])<<endl;
+        cout<<xpack::json::encode(all[i])<<endl;
     }
 
     cout<<"===projection==="<<endl;
     all.clear();
-    col.Find({}).Projection({{"name",1}}).All(all);
+    col.Find(empty).Projection(bb::En("{'name':1}")).All(all);
     for (size_t i=0; i<all.size(); i++) {
-        cout<<x2struct::X::tojson(all[i])<<endl;
+        cout<<xpack::json::encode(all[i])<<endl;
     }
 
     cout<<"===update all==="<<endl;
-    col.UpdateAll({}, {{"$set", bb::vp{{"name", "haha"}}}});
+    col.UpdateAll(empty, bb::En("{'$set':{'name':'haha'}}"));
     all.clear();
-    col.Find({}).All(all);
+    col.Find(empty).All(all);
     for (size_t i=0; i<all.size(); i++) {
-        cout<<x2struct::X::tojson(all[i])<<endl;
+        cout<<xpack::json::encode(all[i])<<endl;
     }
 
     cout<<"=====remove====="<<endl;
-    col.Remove({{"_id",bb::vp{{"$lt", 124}}}});
+    col.Remove(bb::En("{'_id':{'$lt':124}}"));
     cout<<col.Count()<<endl;
 
     return 0;
