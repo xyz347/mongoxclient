@@ -3,7 +3,7 @@
 
 #include <memory>
 #include <mongocxx/collection.hpp>
-#include <xbson/bson.h>
+#include <xpack/bson.h>
 
 #include "query.h"
 #include "util.h"
@@ -110,7 +110,7 @@ public:
 
     // count
     int Count() {
-        return col_.count(bsoncxx::document::view());
+        return col_.count_documents(bsoncxx::document::view());
     }
 private:
     // update one
