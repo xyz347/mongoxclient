@@ -1,9 +1,5 @@
 #include <iostream>
 
-#ifdef BLADE_TEST
-#include <gtest/gtest.h>
-#endif
-
 #include <mongocxx/client.hpp>
 #include <mongocxx/uri.hpp>
 #include <mongocxx/instance.hpp>
@@ -11,7 +7,6 @@
 #include "mongoxclient.hpp"
 #include "xpack/json.h"
 
-mongocxx::instance instance{};
 
 using namespace std;
 using bb = xpack::BsonBuilder;
@@ -26,12 +21,9 @@ struct User {
 };
 
 
-#ifndef BLADE_TEST
 int main(int argc, char *argv[])
-#else
-TEST(mongoxclient, test)
-#endif
 {
+    mongocxx::instance instance{};
     mongocxx::uri uri("mongodb://test:test@127.0.0.1:27018/test");
     mongocxx::client client(uri);
     mongocxx::collection collect = client["test"]["test"];

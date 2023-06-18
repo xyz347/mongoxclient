@@ -2,7 +2,7 @@
 #define __MONGO_X_CLIENT_UTIL_H
 
 #include <bsoncxx/document/view.hpp>
-#include <xbson/bson.h>
+#include <xpack/bson.h>
 
 
 namespace mongoxc {
@@ -11,7 +11,8 @@ class Util {
 public:
     template<typename T>
     static std::string kv(const char *key, const T&val) {
-        xpack::BsonEncoder en;
+        xpack::BsonWriter wr;
+        xpack::XEncoder<xpack::BsonWriter> en(wr);
         en.ob(NULL);
         en.add(key, val);
         en.oe(NULL);

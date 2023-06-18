@@ -2,7 +2,7 @@
 #define __MONGO_X_CLIENT_QUERY_H
 
 #include <mongocxx/collection.hpp>
-#include <xbson/bson.h>
+#include <xpack/bson.h>
 
 #include "util.h"
 
@@ -28,7 +28,7 @@ public:
     }
 
     int Count() {
-        return col_.count(qv_);
+        return col_.count_documents(qv_);
     }
 public:
     Query& Skip(int s) {
